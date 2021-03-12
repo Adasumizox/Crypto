@@ -25,17 +25,21 @@ class HashHelper:
         return outputs
 
     @staticmethod
-    def calculate_checksum(filepath: str, algorithm: str) -> str:
+    def calculate_checksum(filepath: str, algorithm: str, chunk_num_blocks=128) -> str:
         """Calculate checksum of file
 
         :param filepath: path to the file
         :param algorithm: hashing algorithm
+        :param chunk_num_blocks: number of chunks that we want to divide file
         :return: hash of file
         """
         assert (algorithm in hashlib.algorithms_available), "Algorithm not supported"
+
+        hashed = hashlib.new(algorithm)
         with open(filepath, 'rb') as f:
-            buffer = f.read()
-            hashed = hashlib.new(algorithm, buffer)
+            while chunk := f.read(chunk_num_blocks*hashed.block_size):
+                hashed.update(chunk)
+
             return hashed.hexdigest()
 
     @staticmethod
@@ -47,11 +51,12 @@ class HashHelper:
         :param algorithm: hashing algorithm that we choose
         :return: result of comparison
         """
+
         assert (algorithm in hashlib.algorithms_available), "Algorithm not supported"
-        with open(filepath, 'rb') as f:
-            buffer = f.read()
-            hashed = hashlib.new(algorithm, buffer)
-            return hashed.hexdigest() == checksum
+
+        file_checksum = HashHelper.calculate_checksum(filepath, algorithm)
+
+        return file_checksum == checksum
 
     @staticmethod
     def generate_hash_size_times(length: int, algorithm: str, step: int = 1, loops: int = 1000000) -> list:
@@ -71,7 +76,7 @@ class HashHelper:
         return outputs
 
     @staticmethod
-    def display_plot(data: list):
+    def display_plot(data: list) -> None:
         """Generate plot line plot from provided data
         :param data: data that we want to visualize on plot"""
         import plotly.express as px
