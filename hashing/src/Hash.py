@@ -20,8 +20,14 @@ class HashHelper:
         """
         outputs = []
         for algorithm in hashlib.algorithms_available:
-            outputs.append(
-                [algorithm, timeit.timeit(lambda: hashlib.new(algorithm, text.encode("UTF-8")), number=loops)])
+            hash = hashlib.new(algorithm)
+            if algorithm in ('shake_128', 'shake_256'):
+                outputs.append(
+                    [algorithm, timeit.timeit(lambda: hash.update(text.encode("UTF-8")), number=loops), hash.hexdigest(length=64)])
+            else:
+                outputs.append(
+                    [algorithm, timeit.timeit(lambda: hash.update(text.encode("UTF-8")), number=loops),
+                     hash.hexdigest()])
         return outputs
 
     @staticmethod
