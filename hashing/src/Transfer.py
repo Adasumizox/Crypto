@@ -3,8 +3,14 @@ import sys
 
 
 class Transfer:
+    """Helper function for transferring file"""
     @staticmethod
     def download_file(url: str) -> str:
+        """ Method that allow us to download file from web
+
+        :param url: url of file that we wanted to download
+        :return filename of file that we wanted to download:
+        """
 
         assert len(url) > 0
 

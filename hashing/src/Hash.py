@@ -1,9 +1,12 @@
 import hashlib
 import timeit
+import secrets
 
 
 class HashHelper:
     """Helper class for computing hashes"""
+
+    SUPPORTED_PASSWORD_HASHING_ALGORITHMS = ["SHA512", "PBKDF2_HMAC"]
 
     def __init__(self):
         """Constructor for Hash"""
@@ -23,7 +26,8 @@ class HashHelper:
             hash = hashlib.new(algorithm)
             if algorithm in ('shake_128', 'shake_256'):
                 outputs.append(
-                    [algorithm, timeit.timeit(lambda: hash.update(text.encode("UTF-8")), number=loops), hash.hexdigest(length=64)])
+                    [algorithm, timeit.timeit(lambda: hash.update(text.encode("UTF-8")), number=loops),
+                     hash.hexdigest(length=64)])
             else:
                 outputs.append(
                     [algorithm, timeit.timeit(lambda: hash.update(text.encode("UTF-8")), number=loops),
@@ -43,7 +47,7 @@ class HashHelper:
 
         hashed = hashlib.new(algorithm)
         with open(filepath, 'rb') as f:
-            while chunk := f.read(chunk_num_blocks*hashed.block_size):
+            while chunk := f.read(chunk_num_blocks * hashed.block_size):
                 hashed.update(chunk)
 
             return hashed.hexdigest()
@@ -88,3 +92,24 @@ class HashHelper:
         import plotly.express as px
         fig = px.line(data)
         fig.show()
+
+    @staticmethod
+    def hash_password(password: str, salt: str, algorithm: str) -> str:
+        """Hash provided password with salt
+        :param password: user password
+        :param salt: salt used
+        :param algorithm: algorithm that we want to use
+        :return hashed password"""
+        assert algorithm in HashHelper.SUPPORTED_PASSWORD_HASHING_ALGORITHMS, "Algorithm not yet supported"
+        if algorithm == 'SHA512':
+            return hashlib.sha512(salt.encode("UTF-8") + password.encode("UTF-8")).hexdigest()
+        elif algorithm == 'PBKDF2_HMAC':
+            return hashlib.pbkdf2_hmac('sha512', str.encode(password), bytes.fromhex(salt), 100000)
+
+    @staticmethod
+    def generate_salt(nbytes: int = 16) -> str:
+        """Generate salt with cryptographically strong random numbers
+        :param nbytes: number of bytes default=16
+        :return generated salt"""
+        assert nbytes >= 1, "number of bytes must be more than 0"
+        return secrets.token_hex(nbytes)
