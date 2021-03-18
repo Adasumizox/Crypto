@@ -1,1 +1,1 @@
-cyhunspell >= 2.0.2
+cyhunspell == 2.0.2
