@@ -119,4 +119,6 @@ class HashHelper:
     def verify_password(database: str, username: str, password: str) -> bool:
         db = DatabaseController(database)
         user_db_data = db.select_user_data(username)
-        return password == HashHelper.hash_password(user_db_data[0], user_db_data[1], user_db_data[2])
+        print(HashHelper.hash_password(password, user_db_data[1], user_db_data[2]))
+        print(user_db_data[0])
+        return user_db_data[0] == HashHelper.hash_password(password, user_db_data[1], user_db_data[2])

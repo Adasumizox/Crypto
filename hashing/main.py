@@ -26,6 +26,7 @@ if __name__ == '__main__':
                 print("Number not recognized please try again.")
         salt = HashHelper.generate_salt()
         password = HashHelper.hash_password(password, salt, algorithm)
+        print(password)
         db = DatabaseController('./clients')
         db.create_user(username, password, salt, algorithm)
         print(HashHelper.verify_password('./clients', 'adasumizox', password))
