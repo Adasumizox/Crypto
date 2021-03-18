@@ -2,6 +2,7 @@ import hashlib
 import timeit
 import secrets
 
+from hashing.src.DatabaseController import DatabaseController
 
 class HashHelper:
     """Helper class for computing hashes"""
@@ -113,3 +114,9 @@ class HashHelper:
         :return generated salt"""
         assert nbytes >= 1, "number of bytes must be more than 0"
         return secrets.token_hex(nbytes)
+
+    @staticmethod
+    def verify_password(database: str, username: str, password: str) -> bool:
+        db = DatabaseController(database)
+        user_db_data = db.select_user_data(username)
+        return password == HashHelper.hash_password(user_db_data[0], user_db_data[1], user_db_data[2])

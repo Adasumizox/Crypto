@@ -1,7 +1,6 @@
 from hashing.src.Hash import HashHelper
 from hashing.src.DatabaseController import DatabaseController
 from hashing.src.Transfer import Transfer
-from hashing.src.User import User
 from getpass import getpass
 
 if __name__ == '__main__':
@@ -29,5 +28,7 @@ if __name__ == '__main__':
         password = HashHelper.hash_password(password, salt, algorithm)
         db = DatabaseController('./clients')
         db.create_user(username, password, salt, algorithm)
+        print(HashHelper.verify_password('./clients', 'adasumizox', password))
+
     else:
         print("Passwords are not the same")

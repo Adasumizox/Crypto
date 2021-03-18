@@ -40,21 +40,22 @@ class DatabaseController:
             )
             self._connection.commit()
 
-    def select_user_password(self, user: str) -> None:
-        """ selecting hashed password of user from database
+    def select_user_data(self, user: str) -> tuple:
+        """ selecting data of user from database
 
          :param user: program user """
         with self:
             self._cursor.execute(
                 """
                 SELECT 
-                    password 
+                    password, salt, algorithm
                 FROM 
                     users 
                 WHERE 
                     name = ?
                 """, [user])
-            self._connection.commit()
+
+            return self._cursor.fetchone()
 
     def create_user(self, user: str, password: str, salt: str, algorithm: str) -> None:
         """ creation of user in database
