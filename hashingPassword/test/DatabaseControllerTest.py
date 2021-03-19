@@ -1,6 +1,6 @@
 import os
 import unittest
-from hashing.src.DatabaseController import DatabaseController
+from hashingPassword.src.DatabaseController import DatabaseController
 
 
 class DatabaseControllerTest(unittest.TestCase):
