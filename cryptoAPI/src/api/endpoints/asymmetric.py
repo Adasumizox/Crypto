@@ -10,7 +10,11 @@ router = APIRouter()
 
 
 @router.get("/key")
-async def get_asymmetric_key():
+async def get_asymmetric_key() -> object:
+    """ Return asymmetric pair of keys with various formats and set them on server
+
+    :return: asymmetric pair of keys
+    """
     key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048
@@ -39,7 +43,11 @@ async def get_asymmetric_key():
 
 
 @router.get('/key/ssh')
-async def get_ssh_key():
+async def get_ssh_key() -> object:
+    """ Return asymmetric pair of keys in SSH form
+
+    :return: asymmetric pair of keys [SSH form]
+    """
     key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048
@@ -60,6 +68,12 @@ async def get_ssh_key():
 
 @router.post("/key")
 async def post_asymmetric_key(key: dict):
+    """ Set provided asymmetric pair of keys on server
+
+    :param key: dictionary of two values [can be json] which must contain
+    names private_key with private_key and public_key with public_key
+    :return: Information about operation or HTTP exception
+    """
     private_key = bytes(key['private_key'], 'utf-8')
     public_key = bytes(key['public_key'], 'utf-8')
 
@@ -75,6 +89,11 @@ async def post_asymmetric_key(key: dict):
 
 @router.post("/sign")
 async def sign_message(message: str):
+    """ Create signature of provided message
+
+    :param message: message that we want to sign
+    :return: signature that can be provided to check if message was modified
+    """
     query = cryptoInfo.select()
     private_key = await database.fetch_val(query, column=cryptoInfo.c.privateKey)
     private_key = serialization.load_pem_private_key(private_key, password=None)
@@ -94,7 +113,13 @@ async def sign_message(message: str):
 
 
 @router.post("/verify")
-async def verify_message(signature: str, message: str):
+async def verify_message(signature: str, message: str) -> object:
+    """ Verify if message was altered using signature and message
+
+    :param signature: signature of our message in base64 urlsafe form
+    :param message: message that we want to check if was modified
+    :return: status of verification or HTTPException if verification failed
+    """
     query = cryptoInfo.select()
     public_key = await database.fetch_val(query, column=cryptoInfo.c.publicKey)
     public_key = serialization.load_pem_public_key(public_key)
@@ -117,7 +142,12 @@ async def verify_message(signature: str, message: str):
 
 
 @router.post("/encode")
-async def encode(message: str):
+async def encode(message: str) -> object:
+    """ Encode provided message
+
+    :param message: message that we want to encode
+    :return: encoded message
+    """
     query = cryptoInfo.select()
     public_key = await database.fetch_val(query, column=cryptoInfo.c.publicKey)
     public_key = serialization.load_pem_public_key(public_key)
@@ -136,7 +166,12 @@ async def encode(message: str):
 
 
 @router.post("/decode")
-async def decode(ciphertext: str):
+async def decode(ciphertext: str) -> object:
+    """ Decode provided ciphertext
+
+    :param ciphertext: message base64 urlsafe encoded
+    :return: decoded message
+    """
     query = cryptoInfo.select()
     private_key = await database.fetch_val(query, column=cryptoInfo.c.privateKey)
     private_key = serialization.load_pem_private_key(private_key, password=None)

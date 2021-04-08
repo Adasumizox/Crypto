@@ -1,6 +1,5 @@
 import base64
 
-import uvicorn as uvicorn
 from cryptography.fernet import Fernet
 from fastapi import FastAPI
 
@@ -13,6 +12,9 @@ app.include_router(api_router)
 
 @app.on_event("startup")
 async def startup():
+    """
+
+    """
     await database.connect()
     current_keys = await database.fetch_all(cryptoInfo.select())
     if len(current_keys) < 1:
@@ -22,4 +24,7 @@ async def startup():
 
 @app.on_event("shutdown")
 async def shutdown():
+    """
+
+    """
     await database.disconnect()

@@ -8,15 +8,25 @@ from cryptoAPI.src.database.database import database, cryptoInfo
 
 router = APIRouter()
 
+
 @router.get("/key")
-async def get_symmetric_key():
+async def get_symmetric_key() -> object:
+    """ Return symmetric key
+
+    :return: Symmetric key in hex and normal form
+    """
     key = Fernet.generate_key()
     return {'key_hex': base64.urlsafe_b64decode(key).hex(),
             'key': key}
 
 
 @router.post("/key")
-async def post_symmetric_key(key: str):
+async def post_symmetric_key(key: str) -> object:
+    """ Set symmetric key in server
+
+    :param key: 32 bit hexadecimal key
+    :return: information about operation or exception
+    """
     PATTERN = r"[0-9a-fA-F]+"
 
     if not re.fullmatch(PATTERN, key):
@@ -34,7 +44,12 @@ async def post_symmetric_key(key: str):
 
 
 @router.post("/encode")
-async def encode(message: str):
+async def encode(message: str) -> object:
+    """ Encode provided message using symmetric cryptography
+
+    :param message: message that we want to encode
+    :return: encoded message
+    """
     query = cryptoInfo.select()
     private_key = await database.fetch_val(query, column=cryptoInfo.c.privateKey)
     f = Fernet(private_key)
@@ -42,7 +57,12 @@ async def encode(message: str):
 
 
 @router.post("/decode")
-async def decode(message: str):
+async def decode(message: str) -> object:
+    """ Decode provided message using symmetric cryptography
+
+    :param message: message that we want to decode
+    :return: decoded message
+    """
     query = cryptoInfo.select()
     private_key = await database.fetch_val(query, column=cryptoInfo.c.privateKey)
     f = Fernet(private_key)
