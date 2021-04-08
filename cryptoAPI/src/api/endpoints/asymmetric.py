@@ -1,74 +1,15 @@
 import base64
-import re
 
-from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 
-import database
+from cryptoAPI.src.database.database import database, cryptoInfo
 
-app = FastAPI()
-
-
-# TODO: Refactor this to seperate files and modules this is just proof of concept
-
-@app.on_event("startup")
-async def startup():
-    await database.database.connect()
-    current_keys = await database.database.fetch_all(database.cryptoInfo.select())
-    if len(current_keys) < 1:
-        query = database.cryptoInfo.insert().values(privateKey=base64.urlsafe_b64encode(Fernet.generate_key()))
-        await database.database.execute(query)
+router = APIRouter()
 
 
-@app.on_event("shutdown")
-async def shutdown():
-    await database.database.disconnect()
-
-
-@app.get("/symmetric/key")
-async def get_symmetric_key():
-    key = Fernet.generate_key()
-    return {'key_hex': base64.urlsafe_b64decode(key).hex(),
-            'key': key}
-
-
-@app.post("/symmetric/key")
-async def post_symmetric_key(key: str):
-    PATTERN = r"[0-9a-fA-F]+"
-
-    if not re.fullmatch(PATTERN, key):
-        raise HTTPException(status_code=422, detail="Data must be in hex format")
-    if not len(key) == 32:
-        raise HTTPException(status_code=422, detail="Data must contain 32 characters")
-
-    query = database.cryptoInfo.update() \
-        .where(database.cryptoInfo.c.id == 1) \
-        .values(privateKey=base64.urlsafe_b64encode(bytes(key, 'UTF-8')))
-    last_record_id = await database.database.execute(query)
-    if last_record_id != 1:
-        raise HTTPException(status_code=500, detail="Server is unable to process this request,")
-    return "Operation completed succesfully"
-
-
-@app.post("/symmetric/encode")
-async def encode(message: str):
-    query = database.cryptoInfo.select()
-    private_key = await database.database.fetch_val(query, column=database.cryptoInfo.c.privateKey)
-    f = Fernet(private_key)
-    return f.encrypt(bytes(message, "UTF-8"))
-
-
-@app.post("/symmetric/decode")
-async def decode(message: str):
-    query = database.cryptoInfo.select()
-    private_key = await database.database.fetch_val(query, column=database.cryptoInfo.c.privateKey)
-    f = Fernet(private_key)
-    return f.decrypt(bytes(message, "UTF-8"))
-
-
-@app.get("/asymmetric/key")
+@router.get("/key")
 async def get_asymmetric_key():
     key = rsa.generate_private_key(
         public_exponent=65537,
@@ -85,10 +26,10 @@ async def get_asymmetric_key():
         serialization.PublicFormat.SubjectPublicKeyInfo
     )
 
-    query = database.cryptoInfo.update() \
-        .where(database.cryptoInfo.c.id == 1) \
+    query = cryptoInfo.update() \
+        .where(cryptoInfo.c.id == 1) \
         .values(privateKey=private_key, publicKey=public_key)
-    await database.database.execute(query)
+    await database.execute(query)
 
     return {'private_key': base64.urlsafe_b64decode(private_key[27:-26].decode('UTF-8').replace('\n', '')).hex(),
             'private_key_pem': private_key,
@@ -97,7 +38,7 @@ async def get_asymmetric_key():
             'public_key_pem': public_key}
 
 
-@app.get('/asymmetric/key/ssh')
+@router.get('/key/ssh')
 async def get_ssh_key():
     key = rsa.generate_private_key(
         public_exponent=65537,
@@ -117,25 +58,25 @@ async def get_ssh_key():
             'public_key_ssh': public_key[8:].hex()}
 
 
-@app.post("/asymmetric/key")
+@router.post("/key")
 async def post_asymmetric_key(key: dict):
     private_key = bytes(key['private_key'], 'utf-8')
     public_key = bytes(key['public_key'], 'utf-8')
 
-    query = database.cryptoInfo.update() \
-        .where(database.cryptoInfo.c.id == 1) \
+    query = cryptoInfo.update() \
+        .where(cryptoInfo.c.id == 1) \
         .values(privateKey=private_key, publicKey=public_key)
-    last_record_id = await database.database.execute(query)
+    last_record_id = await database.execute(query)
 
     if last_record_id != 1:
         raise HTTPException(status_code=500, detail="Server is unable to process this request,")
     return "Operation completed succesfully"
 
 
-@app.post("/asymmetric/sign")
+@router.post("/sign")
 async def sign_message(message: str):
-    query = database.cryptoInfo.select()
-    private_key = await database.database.fetch_val(query, column=database.cryptoInfo.c.privateKey)
+    query = cryptoInfo.select()
+    private_key = await database.fetch_val(query, column=cryptoInfo.c.privateKey)
     private_key = serialization.load_pem_private_key(private_key, password=None)
     message = bytes(message, 'utf-8')
 
@@ -152,10 +93,10 @@ async def sign_message(message: str):
             'signature_b64': str(base64.urlsafe_b64encode(signature))}
 
 
-@app.post("/asymmetric/verify")
+@router.post("/verify")
 async def verify_message(signature: str, message: str):
-    query = database.cryptoInfo.select()
-    public_key = await database.database.fetch_val(query, column=database.cryptoInfo.c.publicKey)
+    query = cryptoInfo.select()
+    public_key = await database.fetch_val(query, column=cryptoInfo.c.publicKey)
     public_key = serialization.load_pem_public_key(public_key)
     signature = base64.urlsafe_b64decode(signature)
     message = bytes(message, 'utf-8')
@@ -175,10 +116,10 @@ async def verify_message(signature: str, message: str):
         raise HTTPException(status_code=400, detail="Message verification failed")
 
 
-@app.post("/asymmetric/encode")
+@router.post("/encode")
 async def encode(message: str):
-    query = database.cryptoInfo.select()
-    public_key = await database.database.fetch_val(query, column=database.cryptoInfo.c.publicKey)
+    query = cryptoInfo.select()
+    public_key = await database.fetch_val(query, column=cryptoInfo.c.publicKey)
     public_key = serialization.load_pem_public_key(public_key)
     message = bytes(message, 'utf-8')
 
@@ -194,10 +135,10 @@ async def encode(message: str):
     return base64.b64encode(ciphertext)
 
 
-@app.post("/asymmetric/decode")
+@router.post("/decode")
 async def decode(ciphertext: str):
-    query = database.cryptoInfo.select()
-    private_key = await database.database.fetch_val(query, column=database.cryptoInfo.c.privateKey)
+    query = cryptoInfo.select()
+    private_key = await database.fetch_val(query, column=cryptoInfo.c.privateKey)
     private_key = serialization.load_pem_private_key(private_key, password=None)
     ciphertext = base64.urlsafe_b64decode(ciphertext)
 

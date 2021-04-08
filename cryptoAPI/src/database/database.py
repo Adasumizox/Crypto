@@ -11,8 +11,8 @@ cryptoInfo = sqlalchemy.Table(
     "cryptoInfo",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("privateKey", sqlalchemy.Binary),
-    sqlalchemy.Column("publicKey", sqlalchemy.Binary),
+    sqlalchemy.Column("privateKey", sqlalchemy.LargeBinary),
+    sqlalchemy.Column("publicKey", sqlalchemy.LargeBinary),
 )
 
 engine = sqlalchemy.create_engine(
