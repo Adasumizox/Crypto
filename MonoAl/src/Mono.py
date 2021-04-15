@@ -1,5 +1,6 @@
 import string
 import random
+from math import ceil
 from typing import Optional
 
 
@@ -58,6 +59,15 @@ class Mono:
         """
         assert row_num > 0, "number of rows cannot be negative or zero"
         assert row_num < len(self._text), "number of columns must be lower than length of text"
+
+        row_length = len(self._text//row_num)
+
+        output_text = ""
+
+        for x in range(0, row_num):
+            output_text += self._text[0+x::row_length]
+
+        self._text = output_text
 
     def cipher(self, replace_alphabet: Optional[str]) -> str:
         """ create monoalphabetic cipher
