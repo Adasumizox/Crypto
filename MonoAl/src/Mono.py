@@ -1,7 +1,6 @@
 import string
 import random
 from typing import Optional
-#from polyglot.detect import Detector
 
 
 class Mono:
@@ -9,9 +8,24 @@ class Mono:
     def __init__(self, text: str):
         text = self.remove_whitespaces(text)
 
-        #assert Detector(text).language == "English", "text must be in english"
+        assert self.is_english(text), "text must be in english"
 
         self._text = text
+
+    @staticmethod
+    def is_english(text: str) -> bool:
+        """
+
+        :param text: text
+        :return: boolean that represents if text is written in english language
+        """
+
+        try:
+            text.encode(encoding="utf-8").decode("ascii")
+        except UnicodeDecodeError:
+            return False
+        else:
+            return True
 
     @staticmethod
     def remove_whitespaces(text: str) -> str:
