@@ -48,6 +48,18 @@ def hashing_passwords() -> None:
     else:
         print("Passwords are not the same")
 
+def cipher() -> None:
+    from MonoAl.src.Mono import Mono
+
+    data = ""
+
+    with open("./text.txt", "r") as file:
+        data = file.read()
+
+    mono = Mono(data)
+    mono.transpose_column(4)
+    print(mono.cipher(None))
+
 
 if __name__ == '__main__':
-    hashing_passwords()
+    cipher()
