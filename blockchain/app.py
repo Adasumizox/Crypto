@@ -1,68 +1,75 @@
+import uvicorn
+
 from Blockchain import Blockchain
-from flask import Flask, render_template
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 import json
 
 if __name__ == '__main__':
-    app = Flask(__name__)
+    app = FastAPI()
+    app.mount("/static", StaticFiles(directory="static"), name="static")
     blockchain = Blockchain()
+    templates = Jinja2Templates(directory="templates")
 
+    @app.get("/", response_class=HTMLResponse)
+    def index(request: Request):
+        return templates.TemplateResponse("index.html", {"request": request})
 
-    @app.route('/chain', methods=['GET'])
+    @app.get('/chain')
     def get_chain():
         chain_data = []
         for block in blockchain.chain:
             chain_data.append(block.__dict__)
         return json.dumps({"length": len(chain_data), "chain": chain_data})
 
-    @app.route('/login', methods=['POST'])
+    # @app.get('/balance')
+    # def get_balance():
+    #     return None
+    #
+    # @app.post('/transaction')
+    # def make_transaction():
+    #     return None
+    #
+    # @app.post('/login')
+    # def login():
+    #     message = ''
+    #     if request.method == 'POST':
+    #         username = request.form.get('username')
+    #         password = request.form.get('password')
+    #
+    #         # if in database and password correct
+    #         message = "Correct username and password"
+    #         redirect()
+    #         # else
+    #         message = "Wrong username or password"
+    #
+    # @app.post('/register')
+    # def register():
+    #     message = ''
+    #     if request.method == 'POST':
+    #         email = request.form.get('email')
+    #         username = request.form.get('username')
+    #         password = request.form.get('password')
+    #
+    #         # if username already exist
+    #         message = "Username is taken please choose other nickname"
+    #         return redirect(url_for('registerpage'))
+    #         # else
+    #         message = "succesfully created"
 
-    @app.route('/register', methods=['POST'])
+#    @app.get('/loginpage')
+#    def loginpage():
+#        return
 
-    @app.route('/loginpage', methods=['GET'])
+#    @app.get('/registerpage')
+#    def registerpage():
+#        return
+#
+#     @app.get('/homepage')
+#     def home():
+#         # Should have logic checking if user is actually logged
+#         return templates.get_template('home.html')
 
-    @app.route('/registerpage', methods=['GET'])
-
-
-    @app.route("/")
-    def index():
-        # I tried to lean new framework flask and make views with template html but it didn't work so i did it
-        # atrocious way
-        return """
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="X-UA-Compatible" content="ie=edge">
-            <title>Shitcoin</title>
-        </head>
-        <body>
-            <header id="nav-wrapper>
-                <nav id="nav">
-                    <div class="nav left">
-                        <span class="gradient skew>
-                            <h1 class="logo un-skew>
-                                <a href="">$4!t©o!n</a>
-                            </h1>
-                        </span>
-                    </div>
-                    <div class="nav right">
-                        <a href="loginpage" class="nav-link active">
-                            <span class="nav-link-span">
-                                <span class="u-nav">Login</span>
-                            </span>
-                        </a>
-                        <a href="registerpage" class="nav-link">
-                            <span class="nav-link-span">
-                                <span class="u-nav">Register</span>
-                            </span>
-                        </a>
-                    </div>
-                </nav>
-            </header>
-            <main>
-            </main>
-        </body>
-        </html>
-        """
-
-    app.run(debug=True, port=5000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
