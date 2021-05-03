@@ -1,5 +1,7 @@
 import logging
 
+from flask import render_template
+
 logger = logging.getLogger("main")
 logging.basicConfig(level=logging.DEBUG)
 
@@ -89,4 +91,4 @@ def cipher() -> None:
 
 
 if __name__ == '__main__':
-    cipher()
+    pass
