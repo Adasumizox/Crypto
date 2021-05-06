@@ -53,6 +53,14 @@ if __name__ == '__main__':
             raise HTTPException(status_code=400, detail="Account already registered. Please check email/login")
         return crud.create_user(db=db, user=user)
 
+    @app.post('/user/verify')
+    def verify_user(login: string, password: string, db: Session = Depends(get_db)):
+        db_user = crud.get_user_by_login(db=db, login=login)
+        if not db_user or db_user.password != password:
+            raise HTTPException(status_code=400, detail="Logon failed")
+        return "User verified"
+
+
     @app.get('/register')
     def register(request: Request):
         result = "Enter your credentials"
