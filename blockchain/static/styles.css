@@ -18,8 +18,10 @@ body {
   margin: 0;
 }
 section {
+  margin-top: 5em;
   height: 100vh;
 }
+
 #home {
   background-color: #ddd;
 }
