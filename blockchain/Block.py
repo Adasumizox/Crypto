@@ -11,5 +11,9 @@ class Block:
         self.nonce = nonce
 
     def compute_hash(self):
+        """
+        Method for computing hash of block
+        :return: computed hash
+        """
         block_string = json.dumps(self.__dict__, sort_keys=True)
         return sha256(block_string.encode()).hexdigest()

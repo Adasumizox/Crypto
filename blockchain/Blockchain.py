@@ -1,5 +1,6 @@
 import time
 
+import blockchain.Transaction
 from blockchain.Block import Block
 
 
@@ -9,26 +10,44 @@ class Blockchain:
         self.chain = []
         self.create_genesis_block()
 
-    def create_genesis_block(self):
+    def create_genesis_block(self) -> None:
+        """
+        Method for creating first block of blockchain
+        """
         genesis_block = Block(0, [], time.time(), "0")
         genesis_block.hash = genesis_block.compute_hash()
         self.chain.append(genesis_block)
 
     @property
-    def last_block(self):
+    def last_block(self) -> Block:
+        """
+        Property that returns last block in blockchain
+        :return: last block of blockchain
+        """
         return self.chain[-1]
 
-    difficulty = 2
+    DIFFICULTY = 2
 
-    def proof_of_work(self, block):
+    def proof_of_work(self, block: Block):
+        """
+        Calculate proof of work for block
+        :param block: block that we want to calculate
+        :return: computed hash
+        """
         block.nonce = self.last_block.nonce
         computed_hash = block.compute_hash()
-        while not computed_hash.startswith('0' * Blockchain.difficulty):
+        while not computed_hash.startswith('0' * Blockchain.DIFFICULTY):
             block.nonce += 1
             computed_hash = block.compute_hash()
         return computed_hash
 
-    def add_block(self, block, proof):
+    def add_block(self, block: Block, proof) -> bool:
+        """
+        Add block to blockchain
+        :param block: Block that we want to add
+        :param proof: hash that we calculated
+        :return: result of operation
+        """
         previous_hash = self.last_block.hash
         if previous_hash != block.previous_hash:
             return False
@@ -39,9 +58,19 @@ class Blockchain:
         return True
 
     def is_valid_proof(self, block, block_hash):
+        """
+        Method for checking if block hash is correct
+        :param block: block that we want to check
+        :param block_hash: block hash that we want to check
+        :return:
+        """
         return block_hash.startswith('0' * Blockchain.difficulty) and block_hash == block.compute_hash()
 
-    def add_new_transaction(self, transaction):
+    def add_new_transaction(self, transaction: blockchain.Transaction.Transaction):
+        """
+        Add new transaction to be checked
+        :param transaction: created transaction
+        """
         self.unconfirmed_transactions.append(transaction)
 
     def mine(self):
