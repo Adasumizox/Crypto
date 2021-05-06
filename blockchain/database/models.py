@@ -1,19 +1,11 @@
-from pydantic import BaseModel
-from decimal import Decimal
+from sqlalchemy import Column, Integer, String, Float
+from blockchain.database.db import Base
 
+class User(Base):
+    __tablename__ = "users"
 
-class UserBase(BaseModel):
-    email: str
-    login: str
-    balance: Decimal
-
-
-class UserCreate(UserBase):
-    password: str
-    salt: str
-
-class User(UserBase):
-    id: int
-
-    class Config:
-        orm_mode = True
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True)
+    login = Column(String, unique=True)
+    password = Column(String)
+    balance = Column(Float)

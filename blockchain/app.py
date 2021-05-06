@@ -6,8 +6,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from blockchain.database import schema, crud, models
+from blockchain.database import schemas, crud, models
 from blockchain.database.db import SessionLocal, engine
+from blockchain import Transaction
 import json
 
 if __name__ == '__main__':
@@ -44,8 +45,8 @@ if __name__ == '__main__':
         result = None
         return templates.TemplateResponse("login.html", {"request": request, "result": result})
 
-    @app.post('/users/', response_model=schema.User)
-    def create_user(user: models.UserCreate, db: Session = Depends(get_db)):
+    @app.post('/user/create', response_model=schemas.UserCreate)
+    def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         db_user = crud.get_user_by_login(db=db, login=user.login)
         db_email = crud.get_user_by_email(db=db, email=user.email)
         if db_user or db_email:
@@ -70,15 +71,20 @@ if __name__ == '__main__':
             chain_data.append(block.__dict__)
         return json.dumps({"length": len(chain_data), "chain": chain_data})
 
-    @app.get('/balance')
-    def get_balance():
-        # TODO: Get balance of account
-        return None
+    @app.get('/balance/{user_id}')
+    def get_balance(user_id: int):
+        if model := crud.get_user(user_id):
+            return model.balance
+        raise HTTPException(status_code=404, detail="User does not exist")
+
 
     @app.post('/transaction')
-    def make_transaction():
-        # TODO: Make transaction
-        return None
+    def make_transaction(sender_id: int, receiver_id: int, amount: float):
+        sender = crud.get_user(sender_id)
+        receiver = crud.get_user(receiver_id)
+        if not sender and receiver:
+            raise HTTPException(status_code=404, detail="Sender or receiver not found")
+        return Transaction.Transaction(sender_id, receiver_id, amount)
 
 
     uvicorn.run(app, host="127.0.0.1", port=8000)
