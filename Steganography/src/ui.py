@@ -1,6 +1,7 @@
 import cv2
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QPushButton, QVBoxLayout, QLineEdit, QLabel
-from utility import encrypt_message, decrypt_message
+from PIL import Image
+from utility import crypt, decrypt
 
 
 class App(QWidget):
@@ -41,20 +42,22 @@ class App(QWidget):
         self.show()
 
     def get_file(self):
-        self.filename = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "Image files (*.jpg *.jpeg *.png)")[0]
+        self.filename = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "Image files (*.jpg *.png)")[0]
 
     def save_file(self, content):
-        filename = QFileDialog.getSaveFileName(self, 'Save File')[0]
-        cv2.imwrite(filename, content)
+        self.filename = QFileDialog.getSaveFileName(self, 'Save File')[0]
+        content.save(self.filename)
 
     def text_changed(self):
         self.message = self.messageBox.text()
 
     def encrypt(self):
-        self.save_file(encrypt_message(self.filename, self.message))
+        img = Image.open(self.filename)
+        self.save_file(crypt(img, bytes(self.message, 'ascii')))
 
     def decrypt(self):
-        self.output_label.setText(decrypt_message(self.filename))
+        img = Image.open(self.filename)
+        self.output_label.setText(decrypt(img))
 
 if __name__ == '__main__':
     import sys

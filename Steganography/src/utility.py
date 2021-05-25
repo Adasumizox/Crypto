@@ -1,95 +1,73 @@
-from typing import Union
-import numpy as np
-import logging
-import cv2
+from PIL import Image
 
 
-def encrypt_message(image, message):
-    image = cv2.imread(image)
-    # How many bytes we can encode
-    n_bytes = image.shape[0] * image.shape[1] * 3 // 8
-    logging.info("Maximum bytes to encode: ", n_bytes)
+def _validate_image(image):
+    if image.mode not in ('RGB', 'RGBA', 'CMYK'):
+        raise ValueError('Unsupported pixel format: '
+                         'image must be RGB, RGBA, or CMYK')
+    if image.format == 'JPEG':
+        raise ValueError('JPEG format incompatible')
 
-    if len(message) > n_bytes:
-        raise ValueError("Insufficient number of bytes, need bigger image or less data")
 
-    # Delimiter
-    message += "#" * 5
-    message_index = 0
+def crypt_image_data(image_data, data):
+    datalen = len(data)
+    if datalen == 0:
+        raise ValueError('data is empty')
+    if datalen * 3 > len(image_data):
+        raise ValueError('data is too large for image')
 
-    # convert to binary
-    binary_message = message_to_binary(message)
-    # size of data to hide
-    binary_message_len = len(binary_message)
+    image_data = iter(image_data)
 
-    for row in image:
-        for pixel in row:
-            # Get RGB values of pixel
-            r, g, b = message_to_binary(pixel)
-            # rgb_array = [r,g,b]
+    for i in range(datalen):
+        pixels = [value & ~1 for value in
+                  image_data.__next__()[:3] + image_data.__next__()[:3] + image_data.__next__()[:3]]
+        byte = data[i]
+        for j in range(7, -1, -1):
+            pixels[j] |= byte & 1
+            byte >>= 1
+        if i == datalen - 1:
+            pixels[-1] |= 1
+        pixels = tuple(pixels)
+        yield pixels[0:3]
+        yield pixels[3:6]
+        yield pixels[6:9]
 
-            # modify LSB only if there is still data to store
-            # for i, x in enumerate(rgb_array):
-            #     if message_index < binary_message_len:
-            #         pixel[i] = int(x[:-1] + binary_message[message_index], 2)
-            #     elif message_index >= binary_message_len:
-            #         break
 
-            # modify LSB only if there is still data to store
-            if message_index < binary_message_len:
-                pixel[0] = int(r[:-1] + binary_message[message_index], 2)
-                message_index += 1
-            if message_index < binary_message_len:
-                pixel[1] = int(g[:-1] + binary_message[message_index], 2)
-                message_index += 1
-            if message_index < binary_message_len:
-                pixel[2] = int(b[:-1] + binary_message[message_index], 2)
-                message_index += 1
-            print(str(bin(pixel[0]))[-1] + str(bin(pixel[1]))[-1] + str(bin(pixel[2]))[-1])
-            # find a way to end this loop or reduce number of if
-            if message_index >= binary_message_len:
-                break
+def decrypt_image_data(image_data):
+    image_data = iter(image_data)
+    while True:
+        pixels = list(image_data.__next__()[:3] + image_data.__next__()[:3] + image_data.__next__()[:3])
+        byte = 0
+        for c in range(7):
+            byte |= pixels[c] & 1
+            byte <<= 1
+        byte |= pixels[7] & 1
+        yield chr(byte)
+        if pixels[-1] & 1:
+            break
 
+
+def crypt_inplace(image, data):
+    _validate_image(image)
+
+    w = image.size[0]
+    (x, y) = (0, 0)
+    for pixel in crypt_image_data(image.getdata(), data):
+        image.putpixel((x, y), pixel)
+        if x == w - 1:
+            x = 0
+            y += 1
+        else:
+            x += 1
+
+
+def crypt(image, data):
+    image = image.copy()
+    crypt_inplace(image, data)
     return image
 
 
-def decrypt_message(image):
-    image = cv2.imread(image)
+def decrypt(image):
+    _validate_image(image)
 
-    binary_message = ""
-    for rows in image:
-        for pixel in rows:
-            r, g, b = message_to_binary(pixel)
-            # rgb_array = [r,g,b]
-
-            # for x in rgb_array:
-            #     binary_data += x[-1]
-
-            print(r)
-
-            binary_message += r[-1]
-            binary_message += g[-1]
-            binary_message += b[-1]
-
-            print(binary_message)
-
-        all_bytes = [binary_message[i: i + 8] for i in range(0, len(binary_message), 8)]
-
-        decoded_message = ""
-        for byte in all_bytes:
-            decoded_message += chr(int(byte, 2))
-            if decoded_message[-5:] == "#" * 5:
-                break
-
-        return decoded_message[:-5]
-
-
-def message_to_binary(message: Union[str, bytes, np.ndarray, int, np.uint8]):
-    if type(message) == str:
-        return ''.join([format(ord(i), "08b") for i in message ])
-    elif type(message) == bytes or type(message) == np.ndarray:
-        return [format(i, "08b") for i in message]
-    elif type(message) == int or type(message) == np.uint8:
-        return format(message, "08b")
-    else:
-        raise TypeError("Input type not supported")
+    return ''.join(decrypt_image_data(image.getdata()))
