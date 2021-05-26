@@ -1,7 +1,13 @@
 from PIL import Image
+from typing import Generator
 
 
-def _validate_image(image):
+def _validate_image(image: Image) -> None:
+    """ Method of validating Image, only three modes is avaible and JPEG is not supported because it's harder to do bit
+        manipulations with it.
+
+    :param image: Image that we want to validate, PIL library is necessary
+    """
     if image.mode not in ('RGB', 'RGBA', 'CMYK'):
         raise ValueError('Unsupported pixel format: '
                          'image must be RGB, RGBA, or CMYK')
@@ -9,7 +15,12 @@ def _validate_image(image):
         raise ValueError('JPEG format incompatible')
 
 
-def crypt_image_data(image_data, data):
+def encrypt_image_data(image_data, data: bytes) -> Generator[tuple, None, None]:
+    """ Method for encrypting data into image
+
+    :param image_data: Data of image
+    :param data: Bytes that we want to encrypt
+    """
     datalen = len(data)
     if datalen == 0:
         raise ValueError('data is empty')
@@ -33,7 +44,11 @@ def crypt_image_data(image_data, data):
         yield pixels[6:9]
 
 
-def decrypt_image_data(image_data):
+def decrypt_image_data(image_data) -> Generator[chr, None, None]:
+    """ Method for decrypting data from image
+
+    :param image_data: Data of image
+    """
     image_data = iter(image_data)
     while True:
         pixels = list(image_data.__next__()[:3] + image_data.__next__()[:3] + image_data.__next__()[:3])
@@ -47,12 +62,17 @@ def decrypt_image_data(image_data):
             break
 
 
-def crypt_inplace(image, data):
+def encrypt_inplace(image: Image, data:bytes) -> None:
+    """ Method for encrypting Image in place
+
+    :param image: Data of image
+    :param data: Bytes that we want to encrypt
+    """
     _validate_image(image)
 
     w = image.size[0]
     (x, y) = (0, 0)
-    for pixel in crypt_image_data(image.getdata(), data):
+    for pixel in encrypt_image_data(image.getdata(), data):
         image.putpixel((x, y), pixel)
         if x == w - 1:
             x = 0
@@ -61,13 +81,24 @@ def crypt_inplace(image, data):
             x += 1
 
 
-def crypt(image, data):
+def encrypt(image: Image, data: bytes) -> Image:
+    """ Method for encrypting Image
+
+    :param image: Data of image
+    :param data: Bytes that we want to encrypt
+    :return: Encrypted Image
+    """
     image = image.copy()
-    crypt_inplace(image, data)
+    encrypt_inplace(image, data)
     return image
 
 
-def decrypt(image):
+def decrypt(image: Image) -> str:
+    """ Method for decrypting bytes from Image
+
+    :param image: Data of image
+    :return: decrypted bytes
+    """
     _validate_image(image)
 
     return ''.join(decrypt_image_data(image.getdata()))

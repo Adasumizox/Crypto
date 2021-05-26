@@ -1,7 +1,7 @@
 import cv2
-from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QPushButton, QVBoxLayout, QLineEdit, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QPushButton, QVBoxLayout, QLineEdit, QLabel, QErrorMessage
 from PIL import Image
-from utility import crypt, decrypt
+from utility import encrypt, decrypt
 
 
 class App(QWidget):
@@ -41,23 +41,33 @@ class App(QWidget):
         self.setWindowTitle("Steganography")
         self.show()
 
-    def get_file(self):
-        self.filename = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "Image files (*.jpg *.png)")[0]
+    def get_file(self) -> None:
+        self.filename = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "Image files (*.bmp *.png)")[0]
 
-    def save_file(self, content):
+    def save_file(self, content: Image) -> None:
         self.filename = QFileDialog.getSaveFileName(self, 'Save File')[0]
         content.save(self.filename)
 
-    def text_changed(self):
+    def text_changed(self) -> None:
         self.message = self.messageBox.text()
 
-    def encrypt(self):
+    def encrypt(self) -> None:
         img = Image.open(self.filename)
-        self.save_file(crypt(img, bytes(self.message, 'ascii')))
+        try:
+            encrypted_img = encrypt(img, bytes(self.message, 'ascii'))
+            self.save_file(encrypted_img)
+        except:
+            msg = QErrorMessage()
+            msg.showMessage("Unsupported file format/extension")
 
-    def decrypt(self):
+    def decrypt(self) -> None:
         img = Image.open(self.filename)
-        self.output_label.setText(decrypt(img))
+        try:
+            decrypted_img = decrypt(img)
+            self.output_label.setText(decrypted_img)
+        except:
+            msg = QErrorMessage()
+            msg.showMessage("Unsupported file format/extension")
 
 if __name__ == '__main__':
     import sys
