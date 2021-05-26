@@ -21,6 +21,8 @@ Follow these instruction to run this project on your local machine for developme
 ### Prerequisites
 
 - Python >= 3.7.3
+- PyQT5 == 5.15.4
+- Pillow == 8.2.0
 
 ### Installing
 

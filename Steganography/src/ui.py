@@ -1,7 +1,9 @@
-import cv2
-from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QPushButton, QVBoxLayout, QLineEdit, QLabel, QErrorMessage
+from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QPushButton, QVBoxLayout, QLineEdit, QLabel,\
+    QErrorMessage, QCheckBox
 from PIL import Image
 from utility import encrypt, decrypt
+from base64 import urlsafe_b64encode
+from cryptography.fernet import Fernet
 
 
 class App(QWidget):
@@ -28,10 +30,21 @@ class App(QWidget):
         self.messageBox.textChanged.connect(self.text_changed)
         self.message = None
 
+        self.isB64 = False
+        self.isFernet = False
+
+        self.c1 = QCheckBox("Base64")
+        self.c2 = QCheckBox("Fernet")
+
+        self.c1.stateChanged.connect(self.check_changed1)
+        self.c2.stateChanged.connect(self.check_changed2)
+
         self.output_label = QLabel(self)
 
         layout.addWidget(self.message_label)
         layout.addWidget(self.messageBox)
+        layout.addWidget(self.c1)
+        layout.addWidget(self.c2)
         layout.addWidget(self.button)
         layout.addWidget(self.encrypt_button)
         layout.addWidget(self.decrypt_button)
@@ -42,7 +55,7 @@ class App(QWidget):
         self.show()
 
     def get_file(self) -> None:
-        self.filename = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "Image files (*.bmp *.png)")[0]
+        self.filename = QFileDialog.getOpenFileName(self, 'Open file', 'c:\\', "Image files (*.bmp *.png *.tiff *.ico)")[0]
 
     def save_file(self, content: Image) -> None:
         self.filename = QFileDialog.getSaveFileName(self, 'Save File')[0]
@@ -54,7 +67,13 @@ class App(QWidget):
     def encrypt(self) -> None:
         img = Image.open(self.filename)
         try:
-            encrypted_img = encrypt(img, bytes(self.message, 'ascii'))
+            if self.isB64:
+                message = urlsafe_b64encode(self.message.encode('ascii'))
+            if self.isFernet:
+                message = Fernet(Fernet.generate_key()).encrypt(self.message.encode('ascii'))
+            else:
+                message = bytes(self.message, 'ascii')
+            encrypted_img = encrypt(img, message)
             self.save_file(encrypted_img)
         except:
             msg = QErrorMessage()
@@ -68,6 +87,12 @@ class App(QWidget):
         except:
             msg = QErrorMessage()
             msg.showMessage("Unsupported file format/extension")
+
+    def check_changed1(self):
+        self.isB64 = not self.isB64
+
+    def check_changed2(self):
+        self.isFernet = not self.isFernet
 
 if __name__ == '__main__':
     import sys

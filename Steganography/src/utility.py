@@ -3,8 +3,7 @@ from typing import Generator
 
 
 def _validate_image(image: Image) -> None:
-    """ Method of validating Image, only three modes is avaible and JPEG is not supported because it's harder to do bit
-        manipulations with it.
+    """ Method of validating Image, only three modes is avaible and JPEG is not supported because compression.
 
     :param image: Image that we want to validate, PIL library is necessary
     """
@@ -79,6 +78,12 @@ def encrypt_inplace(image: Image, data:bytes) -> None:
             y += 1
         else:
             x += 1
+
+def encrypt_lossy(image: Image, data: bytes) -> None:
+    # 8x8 chunks image splitting
+    # Discrete cosine transform
+    # LSB of all coefficients is changed to a bit taken from each 8-bit block message
+    pass
 
 
 def encrypt(image: Image, data: bytes) -> Image:
